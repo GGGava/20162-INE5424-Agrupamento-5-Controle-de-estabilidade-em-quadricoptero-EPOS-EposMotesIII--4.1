@@ -62,9 +62,8 @@ private:
 
 int main()
 {
-    LSM330 accelerometer;
+    LSM330 gyro;
     cout << "I2C Test\n";
-    GPIO g('c',3, GPIO::OUTPUT);
     while(1) {
 
     }
