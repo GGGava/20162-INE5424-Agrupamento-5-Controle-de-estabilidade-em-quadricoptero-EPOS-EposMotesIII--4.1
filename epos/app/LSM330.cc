@@ -120,18 +120,20 @@ private:
         char msg_a[] = {CTRL5_A, 0x67};
         _i2c->put(I2C_Accl, msg_a, 2);
         _i2c->put(I2C_Accl, WHO_AM_I_A);
-        _i2c->get(I2C_Accl, &msg_a[0]);
+        _i2c->get(I2C_Accl, msg_a);
         char msg_g[2] = {CTRL1_G, 0x0F};
         _i2c->put(I2C_Gyro, msg_g, 2);
         _i2c->put(I2C_Gyro, WHO_AM_I_G);
-        _i2c->get(I2C_Gyro, &msg_g[0]);
+        _i2c->get(I2C_Gyro, msg_g);
     }
     
 public:
     LSM330() {
-        _i2c = new I2C(EPOS::S::I2C_Common::MASTER, 'B', 0, 'B', 1);
-        GPIO('B', 0, GPIO::INPUT).pull_up(); // Force internal 20 kohm pull up
-        GPIO('B', 1, GPIO::INPUT).pull_up();
+        // Set internal pull-ups 20 kohm
+//         GPIO('B', 0, GPIO::INPUT).pull_up();
+//         GPIO('B', 1, GPIO::INPUT).pull_up();
+        // Dont know if I2C keep pull-up active
+        _i2c = new I2C(EPOS::S::I2C_Common::MASTER, 'B', 1, 'B', 0);
         init();
     }
 
