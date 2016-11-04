@@ -184,15 +184,19 @@ public:
         return (byte[1] << 8) | byte[0];
     }
 
+    
+
 private:
     I2C * _i2c;
 };
-
+/*
 int main()
 {
     cout << "I2C/Accelerometer/Gyroscope test" << endl;
     cout << "Start" << endl;
     LSM330 gyro;
+    Thread t1 = new Thread(&readValues);
+    int ret = t1->join();
     Delay(1000000);
     while(1) {
         int value = gyro.getAngleX();
@@ -200,4 +204,4 @@ int main()
         Delay(1000000);
     }
     return 0;
-}
+}*/
