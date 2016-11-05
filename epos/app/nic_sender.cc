@@ -16,14 +16,14 @@ int abc = 1;
 
 OStream cout;
 
-struct Msg {
+/*struct Msg {
     float angleX;
     float angleY;
-    float angleZ;
+    //float angleZ;
     //float accelerationX;
     //float accelerationY;
     //float accelerationZ;
-};
+};*/
 
 int sender(int id) {
     NIC nic;
@@ -33,7 +33,7 @@ int sender(int id) {
     //unsigned char src, prot;
     unsigned int size;
 
-    Msg msg;
+    long msg[6];
 
     int i;
     GPIO g('C', 3, GPIO::OUTPUT);
@@ -42,14 +42,22 @@ int sender(int id) {
         for (i = 5; i < 8; i++) {
             g.set(i & 0x01);
 
-            msg.angleX  = 10;
+            msg[0] = 10;
+            msg[1] = 20;
+            msg[2] = 30;
+            msg[3] = 40;
+            msg[4] = 50;
+            msg[5] = 60;
             //msg.accelerationX  = 20;
 
             cout << nic.mtu() << endl;
-            char *info = (char *)&msg;
-            while( (nic.send(dest, NIC::PTP, info, sizeof(Msg))) == 0){
+            //char *info = (char *)&msg;
+            while( (nic.send(dest, NIC::PTP, &msg, sizeof(long)*6)) == 0){
                 cout << "Falha" << endl;
             }
+
+            cout << "Tamanho:  " << sizeof(dest) + sizeof(NIC::PTP) + sizeof(msg) + sizeof(int) << endl;
+
 
             Delay(1000000);
             cout << "Sender:\t" << nic.address() << endl;
@@ -59,7 +67,7 @@ int sender(int id) {
     //abc = 2;
     //mut.lock();
     //while(true)
-        { cout << id << endl;};
+        //{ cout << id << endl;};
       //  mut.unlock();
     return 0;
 }

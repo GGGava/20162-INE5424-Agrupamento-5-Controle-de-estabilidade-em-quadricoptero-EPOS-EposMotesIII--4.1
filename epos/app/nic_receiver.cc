@@ -12,7 +12,7 @@ const unsigned char SINK_ID = 0x33;
 struct Msg {
     float angleX;
     float angleY;
-    float angleZ;
+    //float angleZ;
     //float accelerationX;
     //float accelerationY;
     //float accelerationZ;
@@ -37,18 +37,19 @@ int receiver() {
             cout << src << endl;
         }*/
         cout << nic.address() << '\t';
-        char *info = (char *)&msg;
-        while(!(nic.receive(&src, &prot, info, sizeof(Msg)) > 0)){
+        //char *info = (char *)&msg;
+        long rece[6];
+        while(!(nic.receive(&src, &prot, &rece, sizeof(long)*6) > 0)){
         }
-        cout << (const char *)info << endl;
-        cout << src << endl;
+        //cout << (const char *)info << endl;
+        cout << rece[0] << endl;
         cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
-        cout << "Angle X : " << msg.angleX << "\n";
-        cout << "Angle Y : " << msg.angleY << "\n";
-        cout << "Angle Z : " << msg.angleZ << "\n";
-        //cout << "Acceleration X : " << msg.accelerationX << "\n";
-        //cout << "Acceleration Y : " << msg.accelerationY << "\n";
-        //cout << "Acceleration Z : " << msg.accelerationZ << "\n";
+        cout << "Angle X : " << rece[0] << "\n";
+        cout << "Angle Y : " << rece[1] << "\n";
+        cout << "Angle Z : " << rece[2] << "\n";
+        cout << "Acceleration X : " << rece[3] << "\n";
+        cout << "Acceleration Y : " << rece[4] << "\n";
+        cout << "Acceleration Z : " << rece[5] << "\n";
     }
 
     return 0;
