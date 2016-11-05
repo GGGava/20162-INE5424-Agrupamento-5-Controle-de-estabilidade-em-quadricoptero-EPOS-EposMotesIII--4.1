@@ -184,7 +184,7 @@ public:
         return (byte[1] << 8) | byte[0];
     }
 
-    
+
 
 private:
     I2C * _i2c;
