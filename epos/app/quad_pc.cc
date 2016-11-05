@@ -3,6 +3,7 @@
 #include <nic.h>
 #include <utility/ostream.h>
 #include <thread.h>
+#include <usb.h>
 #include <mutex.h>
 
 __USING_SYS
@@ -25,7 +26,7 @@ int receiver(NIC *nic, Mutex *mutNic) {
             ret = nic->receive(&src, &prot, &rece, sizeof(long)*6);
             mutNic->unlock();
             Delay(100);
-        while(ret <= 0);
+        } while (ret <= 0);
         cout << endl;
         cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
         cout << "Angle X : " << rece[0] << "\n";
@@ -40,20 +41,19 @@ int receiver(NIC *nic, Mutex *mutNic) {
 
 int sender(NIC *nic, Mutex *mutNic) {
     NIC::Address dest("0:0");
-    UART input();
     const int MAX_LEN = 30;
     char msg[MAX_LEN];
     int index = 0;
     
     while (true) {
         do {
-            msg[0] = input.get();
+            msg[0] = USB::get();
         } while (msg[0] != ':');
         
         index = 0;
         
         while ((index < MAX_LEN) && (msg[index] != '\n')) {
-            msg[index] = input.get();
+            msg[index] = USB::get();
         }
         msg[index] = '\0';
         memset(msg + index, '\0', MAX_LEN - index);
@@ -62,6 +62,7 @@ int sender(NIC *nic, Mutex *mutNic) {
         nic->send(dest, NIC::PTP, &msg, sizeof(char)*MAX_LEN);
         mutNic->unlock();
     }
+    return 0;
 }
 
 
@@ -70,8 +71,9 @@ int main() {
     Mutex mut;
     cout << "Controle de Estabilidade em Quadricoptero - EPOS" << endl;
     Thread *t1 = new Thread(&receiver, &nic, &mut);
-    Thread *t1 = new Thread(&receiver, &nic, &mut);
-    int ret = t1->join();
+    Thread *t2 = new Thread(&sender, &nic, &mut);
+    t1->join();
+    t2->join();
     Delay(1000000);
     return 0;
 }
