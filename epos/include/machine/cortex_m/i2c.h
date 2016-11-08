@@ -27,7 +27,7 @@ public:
     bool ready_to_put() { return !(reg(I2C_STAT) & I2C_STAT_BUSY); }
     bool ready_to_get() { return ready_to_put(); }
 
-    // returns false if an error has occurred
+    // returns true if an error has occurred
     bool put(unsigned char slave_address, const char * data, unsigned int size) {
         bool ret = true;
         // Specify the slave address and that the next operation is a write (last bit = 0)
@@ -41,7 +41,7 @@ public:
                 ret = send_byte(slave_address, data[i], I2C_CTRL_RUN);
 
             if(ret)
-                return false; //an error has occurred
+                return ret; //an error has occurred
         }
         return ret;
     }
@@ -53,6 +53,7 @@ public:
         return send_byte(slave_address, data, I2C_CTRL_RUN | I2C_CTRL_START | I2C_CTRL_STOP);
     }
 
+    //returns true if an error has occurred, false otherwise.
     bool get(char slave_address, char *data) {
         // Specify the slave address and that the next operation is a read (last bit = 1)
         reg(I2C_SA) = (slave_address << 1) | 0x01;
@@ -60,6 +61,7 @@ public:
 
     }
 
+    //returns true if an error has occurred, false otherwise.
     bool get(char slave_address, char *data, unsigned int size) {
         unsigned int i;
         bool ret = true;
@@ -73,26 +75,50 @@ public:
             } else {
                 ret = get_byte(slave_address, data, I2C_CTRL_RUN | I2C_CTRL_ACK);
             }
-            if(!ret) return ret;
+            if(ret) return ret;
         }
         return ret;
     }
+    
+    bool get(char slave_address, char subaddr, char *data, unsigned int size) {
+        unsigned int i;
+        bool ret = true;
+        // Specify the slave address and that the next operation is a write (last bit = 0)
+        reg(I2C_SA) = (slave_address << 1) & 0xFE;
+        if (send_byte(slave_address, subaddr, I2C_CTRL_RUN | I2C_CTRL_START)) {
+          return true;
+        }
+        // Specify the slave address and that the next operation is a read (last bit = 1)
+        reg(I2C_SA) = (slave_address << 1) | 0x01;
+        for(i = 0; i < size; i++, data++) {
+            if(i == 0) {
+                ret = get_byte(slave_address, data, I2C_CTRL_START | I2C_CTRL_RUN | I2C_CTRL_ACK);
+            } else if(i + 1 == size) {
+                ret = get_byte(slave_address, data, I2C_CTRL_STOP | I2C_CTRL_RUN);
+            } else {
+                ret = get_byte(slave_address, data, I2C_CTRL_RUN | I2C_CTRL_ACK);
+            }
+            if(ret) return ret;
+        }
+        return ret;
+    }
+
 
 private:
     bool send_byte(unsigned char slave_address, char data, int mode) {
         reg(I2C_DR) = data;
         reg(I2C_CTRL) = mode;
         while(!ready_to_put());
-        return !(reg(I2C_STAT) & I2C_STAT_ERROR);
+        return (reg(I2C_STAT) & (I2C_STAT_ERROR | I2C_STAT_ADRACK | I2C_STAT_DATACK));
     }
     bool get_byte(unsigned char slave_address, char *data, int mode) {
         reg(I2C_CTRL) = mode;
         while(!ready_to_get());
-        if(reg(I2C_STAT) & I2C_STAT_ERROR) {
-            return false;
+        if(reg(I2C_STAT) & (I2C_STAT_ERROR | I2C_STAT_ADRACK | I2C_STAT_DATACK)) {
+            return true;
         } else {
             *data = reg(I2C_DR);
-            return true;
+            return false;
         }
     }
 
