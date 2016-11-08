@@ -118,26 +118,26 @@ private:
 
     void init() {
         char msg_g[2] = {CTRL1_G, 0x0F};
-        cout << _i2c->put(I2C_Gyro, msg_g, 2) << '\t';
+         _i2c->put(I2C_Gyro, msg_g, 2) ;
         msg_g[0] = CTRL4_G;
         msg_g[1] = 0x3 << 4;
-        cout << _i2c->put(I2C_Gyro, msg_g, 2) << '\t';
-        cout << _i2c->put(I2C_Gyro, WHO_AM_I_G) << '\t';
-        cout << _i2c->get(I2C_Gyro, msg_g);
-        cout << _i2c->get(I2C_Gyro, &msg_g[1]);
-        cout << "Gyro: " << (int)msg_g[0] << '\t' << (int)msg_g[1] << endl;
+         _i2c->put(I2C_Gyro, msg_g, 2) ;
+         _i2c->put(I2C_Gyro, WHO_AM_I_G) ;
+         _i2c->get(I2C_Gyro, msg_g);
+         _i2c->get(I2C_Gyro, &msg_g[1]);
+//         cout << "Gyro: " << (int)msg_g[0] << '\t' << (int)msg_g[1] << endl;
 //         Delay(10000000);
 //         char msg_a[] = {CTRL5_A, 0x67};
-//         cout << _i2c->put(I2C_Accl, msg_a, 2) << '\t';
-//         cout << _i2c->put(I2C_Accl, WHO_AM_I_A) << '\t';
-//         cout << _i2c->get(I2C_Accl, msg_a);
-//         cout << _i2c->get(I2C_Accl, &msg_a[1]);
+//          _i2c->put(I2C_Accl, msg_a, 2) ;
+//          _i2c->put(I2C_Accl, WHO_AM_I_A) ;
+//          _i2c->get(I2C_Accl, msg_a);
+//          _i2c->get(I2C_Accl, &msg_a[1]);
 //         cout << "Acce: " << (int)msg_a[0] << '\t' << (int)msg_a[1] << endl;
     }
     
 public:
     LSM330() {
-        cout << "Initializing LSM330" << endl;
+//         cout << "Initializing LSM330" << endl;
         _i2c = new I2C(EPOS::S::I2C_Common::MASTER, 'B', 1, 'B', 0);
         init();
     }
@@ -148,53 +148,38 @@ public:
     }
 
     short getAngleX() {
-        char byte[6] = {0, 0};
-//         cout << _i2c->put(I2C_Gyro, OUT_X_L_G | AUTO_INC);
-//         cout << _i2c->get(I2C_Gyro, byte, 2);
-        cout << _i2c->get(I2C_Gyro, OUT_X_L_G | AUTO_INC, byte, 6);
-        cout << '\t'
-             << (short)(byte[0] | (byte[1]<<8)) << '\t'
-             << (short)(byte[2] | (byte[3]<<8)) << '\t'
-             << (short)(byte[4] | (byte[5]<<8)) << endl;
+        char byte[2] = {0, 0};
+         _i2c->get(I2C_Gyro, OUT_X_L_G | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
     short getAngleY() {
         char byte[2] = {0, 0};
-        /*cout << */_i2c->put(I2C_Gyro, OUT_Y_L_G | AUTO_INC);
-        /*cout << */_i2c->get(I2C_Gyro, byte, 2);
+         _i2c->get(I2C_Gyro, OUT_Y_L_G | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
     short getAngleZ() {
         char byte[2] = {0, 0};
-        /*cout << */_i2c->put(I2C_Gyro, OUT_Z_L_G | AUTO_INC);
-        /*cout << */_i2c->get(I2C_Gyro, byte, 2);
+         _i2c->get(I2C_Gyro, OUT_Y_L_G | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
     short getAccelerationX() {
-        char byte[6] = {0, 0};
-//         cout << _i2c->put(I2C_Accl, CS_X_A);
-        cout << _i2c->get(I2C_Accl, OUT_X_L_A | AUTO_INC, byte, 6);
-        cout << '\t'
-             << (short)(byte[0] | (byte[1]<<8)) << '\t'
-             << (short)(byte[2] | (byte[3]<<8)) << '\t'
-             << (short)(byte[4] | (byte[5]<<8)) << endl;
+        char byte[2] = {0, 0};
+         _i2c->get(I2C_Accl, OUT_X_L_A | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
     short getAccelerationY() {
         char byte[2] = {0, 0};
-        /*cout <<*/ _i2c->put(I2C_Accl, OUT_Y_L_A | AUTO_INC);
-        /*cout <<*/ _i2c->get(I2C_Accl, byte, 2);
+         _i2c->get(I2C_Accl, OUT_Y_L_A | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
     short getAccelerationZ() {
         char byte[2] = {0, 0};
-        /*cout << */_i2c->put(I2C_Accl, OUT_Z_L_A | AUTO_INC);
-        /*cout << */_i2c->get(I2C_Accl, byte, 2);
+         _i2c->get(I2C_Accl, OUT_Z_L_A | AUTO_INC, byte, 2);
         return (byte[1] << 8) | byte[0];
     }
 
@@ -204,17 +189,17 @@ private:
     I2C * _i2c;
 };
 
-int main()
-{
-    Delay(3000000);
-    cout << "I2C/Accelerometer/Gyroscope test" << endl;
-    cout << "Start" << endl;
-    LSM330 gyro;
-    int value;
-    while(1) {
-        value = gyro.getAngleX();
-//         cout << "Value: " << value << endl;
-        Delay(100000);
-    }
-    return 0;
-}
+// int main()
+// {
+//     Delay(3000000);
+//     cout << "I2C/Accelerometer/Gyroscope test" << endl;
+//     cout << "Start" << endl;
+//     LSM330 gyro;
+//     int value;
+//     while(1) {
+//         value = gyro.getAngleX();
+//         cout << "Value: " << gyro.getAngleX() << '\t' << gyro.getAngleY() << '\t' << gyro.getAngleZ() << endl;
+//         Delay(100000);
+//     }
+//     return 0;
+// }
