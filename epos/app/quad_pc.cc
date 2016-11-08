@@ -10,7 +10,7 @@ __USING_SYS
 
 OStream cout;
 
-Mutex mutOStream;
+Mutex mutUSB;
 Mutex mutNic;
 NIC nic;
 
@@ -30,7 +30,7 @@ int receiver(int id) {
             mutNic.unlock();
             Delay(100);
         } while (ret <= 0);
-        mutOStream.lock();
+        mutUSB.lock();
         cout << endl;
         cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
         cout << "Angle X : " << rece[0] << "\n";
@@ -39,7 +39,7 @@ int receiver(int id) {
         cout << "Acceleration X : " << rece[3] << "\n";
         cout << "Acceleration Y : " << rece[4] << "\n";
         cout << "Acceleration Z : " << rece[5] << "\n";
-        mutOStream.unlock();
+        mutUSB.unlock();
     }
     return 0;
 }
@@ -49,32 +49,39 @@ int sender(int id) {
     const int MAX_LEN = 31;
     char msg[MAX_LEN];
     int index = 0;
-//     Delay(1000000);
-//     cout << "teste" << endl;
-//     Delay(1000000);
+    Delay(1000000);
+    cout << "teste" << endl;
+    Delay(1000000);
     while (true) {
         do {
-//             if (msg[0] = USB::get()) {
-//                 cout << msg[0];
-//             }
+            mutUSB.lock();
+            if (USB::ready_to_get()) {
+                msg[0] = USB::get();
+                cout << msg[0];
+            }
+            mutUSB.unlock();
+            Delay(100);
         } while (msg[0] != ':');
         
         index = 0;
         
         while ((index < (MAX_LEN-1))) {
-            msg[index] = USB::get();
-            if (msg[index] != 0) {
-//                 cout << msg[index];
+            mutUSB.unlock();
+            if(USB::ready_to_get()) {
+                msg[index] = USB::get();
+                cout << msg[index];
                 if (msg[index] == '\n' || msg[index] == '\r') {
                     break;
                 }
                 index++;
             }
+            mutUSB.unlock();
+            Delay(100);
         }
         
         memset(msg + index, '\0', MAX_LEN - index);
         
-//         cout << endl << msg << endl;
+        cout << endl << msg << endl;
         
         mutNic.lock();
         nic.send(dest, NIC::PTP, &msg, sizeof(char)*MAX_LEN);

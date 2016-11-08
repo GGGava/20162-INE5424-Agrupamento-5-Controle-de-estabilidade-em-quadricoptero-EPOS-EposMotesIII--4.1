@@ -11,19 +11,19 @@ __USING_SYS
 using namespace EPOS;
 
 const unsigned char SINK_ID = 0x01;
-Mutex mut;
+NIC nic;
+Mutex mutNic;
+Mutex mutOStream;
 
 long msg[6];
 
 //OStream cout;
 
-int sender(NIC *nic, Mutex *mutNic) {
-    NIC::Address dest("223:239");
+int sender(int id) {
+    NIC::Address dest(NIC::Address::BROADCAST);
     LSM330 sensor;
 
     int ret;
-    //GPIO g('C', 3, GPIO::OUTPUT);
-    mut.lock();
     while (true)
     {
         msg[0] = sensor.getAngleX();;
@@ -34,22 +34,23 @@ int sender(NIC *nic, Mutex *mutNic) {
         msg[5] = sensor.getAccelerationZ();
 
         do {
-            mutNic->lock();
-            ret = nic->send(dest, NIC::PTP, &msg, sizeof(long)*6);
-            mutNic->unlock();
+            mutNic.lock();
+            ret = nic.send(dest, NIC::PTP, &msg, sizeof(long)*6);
+            mutNic.unlock();
             Delay(100);
         } while( ret == 0);
 
+        mutOStream.lock();
         cout << "Pacote Enviado" << endl;
-        cout << "Sender:\t" << nic->address() << endl;
+        cout << "Sender:\t" << nic.address() << endl;
         cout << "Dest:\t" << dest << endl;
+        mutOStream.unlock();
         Delay(1000000);
     }
-    mut.unlock();
     return 0;
 }
 
-int receiver(NIC *nic, Mutex *mutNic) {
+int receiver(int id) {
     NIC::Protocol prot;
     NIC::Address src;
     const int MAX_LEN = 30;
@@ -57,24 +58,24 @@ int receiver(NIC *nic, Mutex *mutNic) {
     int ret;
     while (true) {
         do {
-            mutNic->lock();
-            ret = nic->receive(&src, &prot, &msg, sizeof(char)*MAX_LEN);
-            mutNic->unlock();
+            mutNic.lock();
+            ret = nic.receive(&src, &prot, &msg, sizeof(char)*MAX_LEN);
+            mutNic.unlock();
             Delay(100);
         } while(ret <= 0);
+        mutOStream.lock();
         cout << "Parse this message:" << endl;
         cout << msg << endl;
         cout << "Then send to PID controller" << endl;
+        mutOStream.unlock();
     }
     return 0;
 }
 
 int main() {
-    NIC nic;
-    Mutex mut;
     cout << "Controle de Estabilidade em Quadricoptero - EPOS" << endl;
-    Thread *t1 = new Thread(&sender, &nic, &mut);
-    Thread *t2 = new Thread(&receiver, &nic, &mut);
+    Thread *t1 = new Thread(&sender, 1);
+    Thread *t2 = new Thread(&receiver, 1);
     t1->join();
     t2->join();
     Delay(1000000);
