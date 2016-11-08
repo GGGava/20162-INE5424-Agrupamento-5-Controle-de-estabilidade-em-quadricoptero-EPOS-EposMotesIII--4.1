@@ -182,7 +182,7 @@ template<> struct Traits<Network>: public Traits<void>
     static const unsigned int TIMEOUT = 10; // s
 
     // This list is positional, with one network for each NIC in Traits<NIC>::NICS
-    typedef LIST<IP> NETWORKS;
+    typedef LIST<ELP> NETWORKS;
 };
 
 template<> struct Traits<ELP>: public Traits<Network>

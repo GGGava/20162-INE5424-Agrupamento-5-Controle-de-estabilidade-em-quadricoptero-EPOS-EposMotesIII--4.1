@@ -10,10 +10,13 @@ __USING_SYS
 
 OStream cout;
 
+Mutex mutOStream;
+Mutex mutNic;
+NIC nic;
 
 const unsigned char SINK_ID = 0x33;
 
-int receiver(NIC *nic, Mutex *mutNic) {
+int receiver(int id) {
     NIC::Protocol prot;
     NIC::Address src; // 77f0
 
@@ -22,11 +25,12 @@ int receiver(NIC *nic, Mutex *mutNic) {
     while (true) {
         long rece[6];
         do {
-            mutNic->lock();
-            ret = nic->receive(&src, &prot, &rece, sizeof(long)*6);
-            mutNic->unlock();
+            mutNic.lock();
+            ret = nic.receive(&src, &prot, &rece, sizeof(long)*6);
+            mutNic.unlock();
             Delay(100);
         } while (ret <= 0);
+        mutOStream.lock();
         cout << endl;
         cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
         cout << "Angle X : " << rece[0] << "\n";
@@ -35,45 +39,60 @@ int receiver(NIC *nic, Mutex *mutNic) {
         cout << "Acceleration X : " << rece[3] << "\n";
         cout << "Acceleration Y : " << rece[4] << "\n";
         cout << "Acceleration Z : " << rece[5] << "\n";
+        mutOStream.unlock();
     }
     return 0;
 }
 
-int sender(NIC *nic, Mutex *mutNic) {
-    NIC::Address dest("0:0");
-    const int MAX_LEN = 30;
+int sender(int id) {
+    NIC::Address dest(NIC::Address::BROADCAST);
+    const int MAX_LEN = 31;
     char msg[MAX_LEN];
     int index = 0;
-    
+//     Delay(1000000);
+//     cout << "teste" << endl;
+//     Delay(1000000);
     while (true) {
         do {
-            msg[0] = USB::get();
+//             if (msg[0] = USB::get()) {
+//                 cout << msg[0];
+//             }
         } while (msg[0] != ':');
         
         index = 0;
         
-        while ((index < MAX_LEN) && (msg[index] != '\n')) {
+        while ((index < (MAX_LEN-1))) {
             msg[index] = USB::get();
+            if (msg[index] != 0) {
+//                 cout << msg[index];
+                if (msg[index] == '\n' || msg[index] == '\r') {
+                    break;
+                }
+                index++;
+            }
         }
-        msg[index] = '\0';
+        
         memset(msg + index, '\0', MAX_LEN - index);
         
-        mutNic->lock();
-        nic->send(dest, NIC::PTP, &msg, sizeof(char)*MAX_LEN);
-        mutNic->unlock();
+//         cout << endl << msg << endl;
+        
+        mutNic.lock();
+        nic.send(dest, NIC::PTP, &msg, sizeof(char)*MAX_LEN);
+        mutNic.unlock();
     }
     return 0;
 }
 
 
 int main() {
-    NIC nic;
-    Mutex mut;
+    char msg;
+    Delay(3000000);
     cout << "Controle de Estabilidade em Quadricoptero - EPOS" << endl;
-    Thread *t1 = new Thread(&receiver, &nic, &mut);
-    Thread *t2 = new Thread(&sender, &nic, &mut);
+//     Delay(1000000);
+    Thread *t1 = new Thread(&receiver,1);
+    Thread *t2 = new Thread(&sender,1);
     t1->join();
     t2->join();
-    Delay(1000000);
+    while (1);
     return 0;
 }
