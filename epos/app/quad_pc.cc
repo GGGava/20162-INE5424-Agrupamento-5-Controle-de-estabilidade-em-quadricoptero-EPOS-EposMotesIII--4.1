@@ -6,6 +6,8 @@
 #include <usb.h>
 #include <mutex.h>
 
+#include <utility/string.h>
+
 __USING_SYS
 
 OStream cout;
@@ -23,22 +25,19 @@ int receiver(int id) {
     int ret;
 
     while (true) {
-        long rece[6];
+        float rece[3];
         do {
             mutNic.lock();
-            ret = nic.receive(&src, &prot, &rece, sizeof(long)*6);
+            ret = nic.receive(&src, &prot, &rece, sizeof(float)*3);
             mutNic.unlock();
             Delay(100);
         } while (ret <= 0);
         mutUSB.lock();
         cout << endl;
-        cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
+//         cout << "Controlador de Estabilidade para Quadricoptero - EPOS\n";
         cout << "Angle X : " << rece[0] << "\n";
         cout << "Angle Y : " << rece[1] << "\n";
         cout << "Angle Z : " << rece[2] << "\n";
-        cout << "Acceleration X : " << rece[3] << "\n";
-        cout << "Acceleration Y : " << rece[4] << "\n";
-        cout << "Acceleration Z : " << rece[5] << "\n";
         mutUSB.unlock();
     }
     return 0;
@@ -48,7 +47,8 @@ int sender(int id) {
     NIC::Address dest(NIC::Address::BROADCAST);
     const int MAX_LEN = 31;
     char msg[MAX_LEN];
-    int index = 0;
+    int index = 0, i, paramIndex;
+    int parameters[2];
     Delay(1000000);
     cout << "teste" << endl;
     Delay(1000000);
@@ -57,7 +57,7 @@ int sender(int id) {
             mutUSB.lock();
             if (USB::ready_to_get()) {
                 msg[0] = USB::get();
-                cout << msg[0];
+//                 cout << msg[0];
             }
             mutUSB.unlock();
             Delay(100);
@@ -69,7 +69,7 @@ int sender(int id) {
             mutUSB.unlock();
             if(USB::ready_to_get()) {
                 msg[index] = USB::get();
-                cout << msg[index];
+//                 cout << msg[index];
                 if (msg[index] == '\n' || msg[index] == '\r') {
                     break;
                 }
@@ -83,8 +83,20 @@ int sender(int id) {
         
         cout << endl << msg << endl;
         
+        paramIndex = 0;
+        index = 0;
+        for (i = 0; i < MAX_LEN; i++) {
+          if (msg[i] > '9' || msg[i] < '0') {
+            msg[i] = '\0';
+            parameters[paramIndex++] = atoi(&msg[index]);
+            index = ++i;
+            if (paramIndex == 2)
+              break;
+          }
+        }
+        
         mutNic.lock();
-        nic.send(dest, NIC::PTP, &msg, sizeof(char)*MAX_LEN);
+        nic.send(dest, NIC::PTP, &parameters, sizeof(int)*2);
         mutNic.unlock();
     }
     return 0;

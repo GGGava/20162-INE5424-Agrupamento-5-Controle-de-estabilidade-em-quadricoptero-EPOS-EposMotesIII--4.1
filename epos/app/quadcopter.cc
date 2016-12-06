@@ -15,7 +15,7 @@ NIC nic;
 Mutex mutNic;
 Mutex mutOStream;
 
-long msg[6];
+float msg[3];
 
 //OStream cout;
 
@@ -26,26 +26,24 @@ int sender(int id) {
     int ret;
     while (true)
     {
-        msg[0] = sensor.getAngleX();;
-        msg[1] = sensor.getAngleY();;
-        msg[2] = sensor.getAngleZ();;
-        msg[3] = sensor.getAccelerationX();
-        msg[4] = sensor.getAccelerationY();
-        msg[5] = sensor.getAccelerationZ();
+        sensor.readValues();
+        msg[0] = sensor.getAngleX();
+        msg[1] = sensor.getAngleY();
+        msg[2] = sensor.getAngleZ();
 
         do {
             mutNic.lock();
-            ret = nic.send(dest, NIC::PTP, &msg, sizeof(long)*6);
+            ret = nic.send(dest, NIC::PTP, &msg, sizeof(float)*3);
             mutNic.unlock();
             Delay(100);
         } while( ret == 0);
 
-        mutOStream.lock();
-        cout << "Pacote Enviado" << endl;
-        cout << "Sender:\t" << nic.address() << endl;
-        cout << "Dest:\t" << dest << endl;
-        mutOStream.unlock();
-        Delay(1000000);
+//         mutOStream.lock();
+//         cout << "Pacote Enviado" << endl;
+//         cout << "Sender:\t" << nic.address() << endl;
+//         cout << "Dest:\t" << dest << endl;
+//         mutOStream.unlock();
+        Delay(100000);
     }
     return 0;
 }
@@ -53,19 +51,18 @@ int sender(int id) {
 int receiver(int id) {
     NIC::Protocol prot;
     NIC::Address src;
-    const int MAX_LEN = 30;
-    char msg[MAX_LEN];
+    int parameters[2];
     int ret;
     while (true) {
         do {
             mutNic.lock();
-            ret = nic.receive(&src, &prot, &msg, sizeof(char)*MAX_LEN);
+            ret = nic.receive(&src, &prot, &parameters, sizeof(int)*2);
             mutNic.unlock();
             Delay(100);
         } while(ret <= 0);
         mutOStream.lock();
         cout << "Parse this message:" << endl;
-        cout << msg << endl;
+        cout << parameters[0] << ':' << parameters[1] << endl;
         cout << "Then send to PID controller" << endl;
         mutOStream.unlock();
     }
